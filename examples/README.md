@@ -8,8 +8,7 @@ Runnable examples for the public Zep Cloud SDKs.
 | TypeScript | [`typescript`](./typescript) | [`@getzep/zep-cloud`](https://www.npmjs.com/package/@getzep/zep-cloud) v4 |
 | Go | [`go`](./go) | [`github.com/getzep/zep-go/v4`](https://pkg.go.dev/github.com/getzep/zep-go/v4) |
 
-The examples use published SDK packages or the public HTTP API. They do not require
-a local SDK checkout.
+The examples use published SDK packages. They do not require a local SDK checkout.
 
 ## Agent Skills
 

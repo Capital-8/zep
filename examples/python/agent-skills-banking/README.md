@@ -3,6 +3,9 @@
 This example shows how Zep creates an Agent Skill from a successful teacher Trace.
 A PydanticAI student agent then reads the live Skill and repeats a banking procedure.
 The tools, input models, database, and reports use Pydantic.
+All Zep operations use the published `zep-cloud` Python SDK.
+The example uses `Zep.agent` for Agents, Traces, learning status, and Skill search.
+It uses `Zep.task.get` to poll Trace closure. The lockfile pins SDK version 4.0.1.
 
 The bank policies and account records are invented. This example is inspired by a
 banking interest-correction task, but it does not include tau3 code or data.

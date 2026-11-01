@@ -1,4 +1,5 @@
 import json
+from contextlib import nullcontext
 from decimal import Decimal
 
 import pytest
@@ -48,6 +49,7 @@ def test_installed_dependency_versions_are_recorded():
         "anthropic",
         "openai",
         "httpx",
+        "zep-cloud",
     }
     assert all(installed_versions().values())
 
@@ -66,7 +68,7 @@ def test_run_uses_and_records_the_selected_teacher_effort(tmp_path, monkeypatch,
         return {"passed": False, "termination": "final_answer"}
 
     monkeypatch.setattr(walkthrough, "stage", fake_stage)
-    monkeypatch.setattr(walkthrough, "Hosted", lambda path: None)
+    monkeypatch.setattr(walkthrough, "Hosted", lambda path: nullcontext(None))
     args = argparse.Namespace(
         output=str(tmp_path / "run"),
         resume=False,
@@ -134,7 +136,7 @@ def test_repeat_mode_makes_six_calls_for_three_pairs_instead_of_reusing_results(
         return row
 
     monkeypatch.setattr(walkthrough, "episode", fake_episode)
-    monkeypatch.setattr(walkthrough, "Hosted", lambda path: None)
+    monkeypatch.setattr(walkthrough, "Hosted", lambda path: nullcontext(None))
     monkeypatch.setattr(walkthrough, "live_skills", lambda *args: skills)
     args = argparse.Namespace(
         learned_run=str(learned),
@@ -156,3 +158,105 @@ def test_repeat_mode_makes_six_calls_for_three_pairs_instead_of_reusing_results(
     with pytest.raises(ValueError, match="indices overlap"):
         asyncio.run(walkthrough.verify(args))
     assert len(calls) == 6
+
+
+def test_walkthrough_uses_sdk_for_the_learning_loop_and_resume(tmp_path, monkeypatch):
+    import argparse
+    import asyncio
+
+    import httpx
+
+    import walkthrough
+    from hosted import Hosted
+    from runner import write_json
+
+    monkeypatch.setenv("ZEP_API_KEY", "local-test-value")
+    monkeypatch.delenv("ZEP_BASE_URL", raising=False)
+    monkeypatch.setattr("hosted.time.sleep", lambda _: None)
+    requests = []
+    clients = []
+    episodes = []
+
+    def handler(request):
+        requests.append((request.method, request.url.path))
+        assert request.headers["Authorization"] == "Api-Key local-test-value"
+        path = request.url.path
+        if path == "/api/v4/agents":
+            return httpx.Response(201, json={"uuid": "agent-uuid"})
+        if path.endswith("/traces"):
+            return httpx.Response(201, json={"uuid": "trace-uuid"})
+        if path.endswith("/events"):
+            return httpx.Response(201, json={"uuid": "event-uuid"})
+        if path.endswith("/close"):
+            return httpx.Response(202, json={"task": {"uuid": "close-task"}})
+        if path == "/api/v4/tasks/close-task":
+            return httpx.Response(200, json={"status": "succeeded"})
+        if path.endswith("/traces/trace-uuid"):
+            return httpx.Response(200, json={"status": "closed", "verification": "external"})
+        if path.endswith("/learning"):
+            return httpx.Response(200, json={"compilation_pending": False})
+        if path.endswith("/learning-runs"):
+            return httpx.Response(200, json={"items": [{"decision": "produced"}]})
+        assert path.endswith("/skills/search")
+        return httpx.Response(
+            200,
+            json={
+                "items": [
+                    {
+                        "uuid": "skill-uuid",
+                        "version": 1,
+                        "markdown": "Compare every permitted package.",
+                    }
+                ]
+            },
+        )
+
+    def hosted_factory(ledger):
+        hosted = Hosted(ledger, httpx.MockTransport(handler))
+        clients.append(hosted)
+        return hosted
+
+    async def fake_episode(path, case, model, effort, skills=None, teaching=False):
+        path.mkdir()
+        episodes.append(path.name)
+        row = {
+            "passed": bool(skills) or teaching,
+            "termination": "final_answer",
+            "tokens": 1,
+            "seconds": 0.1,
+            "failed_provider_calls": 0,
+        }
+        write_json(path / "result.json", row)
+        return row
+
+    monkeypatch.setattr(walkthrough, "Hosted", hosted_factory)
+    monkeypatch.setattr(walkthrough, "episode", fake_episode)
+    monkeypatch.setattr(
+        walkthrough,
+        "trace_events",
+        lambda _: [{"event_type": "decision", "content": "Compare every permitted package."}],
+    )
+    args = argparse.Namespace(
+        output=str(tmp_path / "run"),
+        resume=False,
+        student="claude-haiku-4-5-20251001",
+        teacher="claude-opus-5-5",
+        effort="none",
+        teacher_effort="max",
+        seed=404,
+        teacher_seed=54,
+        compile_timeout=1,
+    )
+    asyncio.run(walkthrough.run_demo(args))
+    assert episodes == ["without-skill", "teacher", "with-skill"]
+    output = tmp_path / "run"
+    assert json.loads((output / "upload.json").read_text())["final_trace"]["status"] == "closed"
+    assert json.loads((output / "skill-pin.json").read_text())[0]["uuid"] == "skill-uuid"
+    assert (output / "skill-skill-uuid-v1.md").read_text() == "Compare every permitted package."
+    assert json.loads((output / "summary.json").read_text())["with_skill"]["passed"]
+    before_resume = len(requests)
+    args.resume = True
+    asyncio.run(walkthrough.run_demo(args))
+    assert episodes == ["without-skill", "teacher", "with-skill"]
+    assert requests[before_resume:] == [("POST", "/api/v4/agents/agent-uuid/skills/search")]
+    assert all(client.http_client.is_closed for client in clients)
