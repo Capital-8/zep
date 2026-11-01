@@ -1,0 +1,27 @@
+[project]
+name = "banking-skills-simple"
+version = "3.1.1"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "pydantic-ai-slim[anthropic,openai]>=1.0,<2",
+    "openai==3.42.0",
+    "httpx>=0.28,<0.29",
+    "pydantic>=2.11,<3",
+    "zep-cloud==4.0.1",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.3,<9", "ruff>=0.9,<1", "pyright>=1.1.390"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.pyright]
+include = ["banking.py", "runner.py", "hosted.py", "walkthrough.py", "audit.py", "tests"]
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "basic"
