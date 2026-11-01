@@ -132,7 +132,7 @@ async def run_demo(args: argparse.Namespace) -> None:
         "student": args.student,
         "effort": args.effort,
         "teacher": args.teacher,
-        "teacher_effort": "max",
+        "teacher_effort": args.teacher_effort,
         "teacher_teaching_output": True,
         "student_temperature": 0
         if args.effort == "none" and model_identifier(args.student)[0] == "anthropic"
@@ -164,7 +164,13 @@ async def run_demo(args: argparse.Namespace) -> None:
         output, "without-skill", args.seed, args.student, args.effort, config["source"]
     )
     teacher = await stage(
-        output, "teacher", args.teacher_seed, args.teacher, "max", config["source"], teaching=True
+        output,
+        "teacher",
+        args.teacher_seed,
+        args.teacher,
+        args.teacher_effort,
+        config["source"],
+        teaching=True,
     )
     if not teacher["passed"] or teacher["termination"] != "final_answer":
         raise RuntimeError("The teacher did not pass. No successful Trace will be uploaded.")
@@ -383,6 +389,7 @@ def main() -> None:
     run.add_argument("--student", default="claude-haiku-4-5-20251001")
     run.add_argument("--effort", default="none")
     run.add_argument("--teacher", default="claude-opus-5-5")
+    run.add_argument("--teacher-effort", default="max")
     run.add_argument("--seed", type=int, default=404)
     run.add_argument("--teacher-seed", type=int, default=54)
     run.add_argument("--compile-timeout", type=int, default=900)

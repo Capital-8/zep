@@ -52,6 +52,41 @@ def test_installed_dependency_versions_are_recorded():
     assert all(installed_versions().values())
 
 
+@pytest.mark.parametrize("teacher_effort", ["none", "max"])
+def test_run_uses_and_records_the_selected_teacher_effort(tmp_path, monkeypatch, teacher_effort):
+    import argparse
+    import asyncio
+
+    import walkthrough
+
+    calls = []
+
+    async def fake_stage(output, name, seed, model, effort, source, skills=None, teaching=False):
+        calls.append((name, model, effort, teaching))
+        return {"passed": False, "termination": "final_answer"}
+
+    monkeypatch.setattr(walkthrough, "stage", fake_stage)
+    monkeypatch.setattr(walkthrough, "Hosted", lambda path: None)
+    args = argparse.Namespace(
+        output=str(tmp_path / "run"),
+        resume=False,
+        student="claude-haiku-4-5-20251001",
+        effort="none",
+        teacher="anthropic:custom-teacher",
+        teacher_effort=teacher_effort,
+        seed=404,
+        teacher_seed=54,
+    )
+    with pytest.raises(RuntimeError, match="teacher did not pass"):
+        asyncio.run(walkthrough.run_demo(args))
+    assert calls == [
+        ("without-skill", args.student, "none", False),
+        ("teacher", args.teacher, teacher_effort, True),
+    ]
+    config = json.loads((tmp_path / "run" / "config.json").read_text())
+    assert config["teacher_effort"] == teacher_effort
+
+
 def test_repeated_indices_are_reserved_before_calls_and_cannot_be_reused(tmp_path):
     register_attempt(tmp_path, tmp_path / "first", [3, 3], "first", [0, 1])
     with pytest.raises(ValueError, match="indices overlap"):

@@ -122,9 +122,12 @@ supported model names and compatible effort settings. For example:
 
 ```bash
 uv run --frozen python walkthrough.py run --output runs/custom-001 \
-  --student YOUR_STUDENT_MODEL --teacher YOUR_TEACHER_MODEL --effort none
+  --student YOUR_STUDENT_MODEL --teacher YOUR_TEACHER_MODEL \
+  --effort none --teacher-effort none
 ```
 
+The `--effort` option controls the student. The `--teacher-effort` option controls
+the teacher and defaults to `max`. Select an effort value that each model supports.
 Changing models can change the result. Use `walkthrough.py run --help` to see the options.
 The runner selects Anthropic for `claude-` names and OpenAI for `gpt-`, `o1`, `o3`,
 and `o4` names. Other names require an `anthropic:` or `openai:` prefix.
