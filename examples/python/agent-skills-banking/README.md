@@ -17,7 +17,7 @@ can produce a different result. The example does not guarantee a fail-to-pass ch
 - Use Python 3.12 or 3.13. The setup command below lets uv install Python 3.12.
 - Install [Git](https://git-scm.com/downloads) and
   [uv](https://docs.astral.sh/uv/getting-started/installation/).
-- Use an Anthropic API key with access to `claude-haiku-4-5-20251001` and
+- Use an Anthropic API key with access to `claude-haiku-5-5` and
   `claude-opus-5-5`, or select models that your account can use.
 - Use a Zep project API key with Agent Skills access on the
   [public Zep service](https://app.getzep.com/). An account without Agent Skills

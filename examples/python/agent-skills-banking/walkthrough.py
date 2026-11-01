@@ -16,7 +16,14 @@ from typing import Any
 
 from banking import DOCUMENTS, expected_database, make_case
 from hosted import Hosted, readable_skills
-from runner import episode, model_identifier, source_hashes, trace_events, write_json
+from runner import (
+    DEFAULT_STUDENT_MODEL,
+    episode,
+    model_identifier,
+    source_hashes,
+    trace_events,
+    write_json,
+)
 
 
 def digest(value: Any) -> str:
@@ -389,7 +396,7 @@ def main() -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     run = commands.add_parser("run")
     run.add_argument("--output", required=True)
-    run.add_argument("--student", default="claude-haiku-4-5-20251001")
+    run.add_argument("--student", default=DEFAULT_STUDENT_MODEL)
     run.add_argument("--effort", default="none")
     run.add_argument("--teacher", default="claude-opus-5-5")
     run.add_argument("--teacher-effort", default="max")

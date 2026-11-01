@@ -54,6 +54,24 @@ def test_installed_dependency_versions_are_recorded():
     assert all(installed_versions().values())
 
 
+@pytest.mark.parametrize(
+    ("options", "expected"),
+    [([], "claude-haiku-5-5"), (["--student", "anthropic:custom-model"], "anthropic:custom-model")],
+)
+def test_walkthrough_cli_selects_the_student_model(tmp_path, monkeypatch, options, expected):
+    import walkthrough
+
+    selected = []
+
+    async def fake_run_demo(args):
+        selected.append(args.student)
+
+    monkeypatch.setattr(walkthrough, "run_demo", fake_run_demo)
+    monkeypatch.setattr("sys.argv", ["walkthrough.py", "run", "--output", str(tmp_path), *options])
+    walkthrough.main()
+    assert selected == [expected]
+
+
 @pytest.mark.parametrize("teacher_effort", ["none", "max"])
 def test_run_uses_and_records_the_selected_teacher_effort(tmp_path, monkeypatch, teacher_effort):
     import argparse
@@ -72,7 +90,7 @@ def test_run_uses_and_records_the_selected_teacher_effort(tmp_path, monkeypatch,
     args = argparse.Namespace(
         output=str(tmp_path / "run"),
         resume=False,
-        student="claude-haiku-4-5-20251001",
+        student="claude-haiku-5-5",
         effort="none",
         teacher="anthropic:custom-teacher",
         teacher_effort=teacher_effort,
@@ -218,7 +236,7 @@ def test_walkthrough_uses_sdk_for_the_learning_loop_and_resume(tmp_path, monkeyp
 
     async def fake_episode(path, case, model, effort, skills=None, teaching=False):
         path.mkdir()
-        episodes.append(path.name)
+        episodes.append((path.name, model))
         row = {
             "passed": bool(skills) or teaching,
             "termination": "final_answer",
@@ -239,7 +257,7 @@ def test_walkthrough_uses_sdk_for_the_learning_loop_and_resume(tmp_path, monkeyp
     args = argparse.Namespace(
         output=str(tmp_path / "run"),
         resume=False,
-        student="claude-haiku-4-5-20251001",
+        student="claude-haiku-5-5",
         teacher="claude-opus-5-5",
         effort="none",
         teacher_effort="max",
@@ -248,7 +266,12 @@ def test_walkthrough_uses_sdk_for_the_learning_loop_and_resume(tmp_path, monkeyp
         compile_timeout=1,
     )
     asyncio.run(walkthrough.run_demo(args))
-    assert episodes == ["without-skill", "teacher", "with-skill"]
+    expected_episodes = [
+        ("without-skill", "claude-haiku-5-5"),
+        ("teacher", "claude-opus-5-5"),
+        ("with-skill", "claude-haiku-5-5"),
+    ]
+    assert episodes == expected_episodes
     output = tmp_path / "run"
     assert json.loads((output / "upload.json").read_text())["final_trace"]["status"] == "closed"
     assert json.loads((output / "skill-pin.json").read_text())[0]["uuid"] == "skill-uuid"
@@ -257,6 +280,6 @@ def test_walkthrough_uses_sdk_for_the_learning_loop_and_resume(tmp_path, monkeyp
     before_resume = len(requests)
     args.resume = True
     asyncio.run(walkthrough.run_demo(args))
-    assert episodes == ["without-skill", "teacher", "with-skill"]
+    assert episodes == expected_episodes
     assert requests[before_resume:] == [("POST", "/api/v4/agents/agent-uuid/skills/search")]
     assert all(client.http_client.is_closed for client in clients)

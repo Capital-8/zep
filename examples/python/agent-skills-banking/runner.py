@@ -43,6 +43,8 @@ from banking import (
     score,
 )
 
+DEFAULT_STUDENT_MODEL = "claude-haiku-5-5"
+
 SYSTEM = (
     "You are a banking service agent. Resolve the customer's request using the local "
     "banking tools and the bank's policies. The customer is already verified and has "
@@ -250,7 +252,7 @@ def build_agent(
 async def episode(
     path: Path,
     case: Case,
-    model_name: str = "claude-haiku-5-5",
+    model_name: str = DEFAULT_STUDENT_MODEL,
     effort: str = "low",
     skills: list[dict[str, Any]] | None = None,
     test_model: Model | None = None,
@@ -429,7 +431,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--model", default="claude-haiku-5-5")
+    parser.add_argument("--model", default=DEFAULT_STUDENT_MODEL)
     parser.add_argument("--effort", default="low")
     parser.add_argument("--skills-json")
     args = parser.parse_args()

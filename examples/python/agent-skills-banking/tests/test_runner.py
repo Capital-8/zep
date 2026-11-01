@@ -12,7 +12,7 @@ from runner import TEACHING_REQUEST, build_agent, episode, model_identifier, tra
 @pytest.mark.parametrize(
     ("model_name", "expected"),
     [
-        ("claude-haiku-4-5-20251001", ("anthropic", "claude-haiku-4-5-20251001")),
+        ("claude-haiku-5-5", ("anthropic", "claude-haiku-5-5")),
         ("claude-opus-5-5", ("anthropic", "claude-opus-5-5")),
         ("gpt-6-luna", ("openai", "gpt-6-luna")),
         ("gpt-4.1-mini", ("openai", "gpt-4.1-mini")),
@@ -99,6 +99,7 @@ def test_framework_persists_and_scores_complete_db(tmp_path):
     path = tmp_path / "valid"
     result = asyncio.run(episode(path, case, test_model=scripted_model(valid_operations(case))))
     assert result["passed"]
+    assert json.loads((path / "start.json").read_text())["model"] == "claude-haiku-5-5"
     assert result["validation_corrections"] == 0
     assert len(json.loads((path / "database.json").read_text())["reports"]) == 2
     events = trace_events(path)
