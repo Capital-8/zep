@@ -236,6 +236,23 @@ def test_sdk_transport_failure_is_recorded_and_client_is_closed(tmp_path):
     assert hosted.http_client.is_closed
 
 
+def test_environment_proxy_cannot_bypass_the_ledger_transport(tmp_path, monkeypatch):
+    monkeypatch.setenv("HTTPS_PROXY", "http://127.0.0.1:1")
+    monkeypatch.setenv("ALL_PROXY", "http://127.0.0.1:1")
+    monkeypatch.setenv("NO_PROXY", "")
+    calls = []
+
+    def handler(request):
+        calls.append(request.url.path)
+        return httpx.Response(201, json={"uuid": "agent-uuid"})
+
+    with Hosted(tmp_path / "zep.jsonl", httpx.MockTransport(handler)) as hosted:
+        assert hosted.create_agent()["uuid"] == "agent-uuid"
+    records = [json.loads(line) for line in (tmp_path / "zep.jsonl").read_text().splitlines()]
+    assert calls == ["/api/v4/agents"]
+    assert len(records) == 1 and records[0]["status"] == 201
+
+
 @pytest.mark.parametrize("status", ["pending", "processing"])
 def test_sdk_close_timeout_can_resume_without_uploading_again(tmp_path, status):
     checkpoint = tmp_path / "upload.json"
