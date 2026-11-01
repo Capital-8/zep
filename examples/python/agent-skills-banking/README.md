@@ -126,6 +126,10 @@ uv run --frozen python walkthrough.py run --output runs/custom-001 \
 ```
 
 Changing models can change the result. Use `walkthrough.py run --help` to see the options.
+The runner selects Anthropic for `claude-` names and OpenAI for `gpt-`, `o1`, `o3`,
+and `o4` names. Other names require an `anthropic:` or `openai:` prefix.
+OpenAI models use the Responses API and require `OPENAI_API_KEY` instead of
+`ANTHROPIC_API_KEY`. If you use both providers, set both keys.
 
 ## Understand the task and score
 

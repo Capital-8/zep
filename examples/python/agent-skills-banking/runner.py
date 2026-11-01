@@ -82,6 +82,20 @@ def source_hashes() -> dict[str, str]:
     }
 
 
+def model_identifier(model_name: str) -> tuple[str, str]:
+    provider, separator, name = model_name.partition(":")
+    if not separator:
+        provider = ""
+        name = model_name
+        if name.startswith("claude-"):
+            provider = "anthropic"
+        elif name.startswith(("gpt-", "o1", "o3", "o4")):
+            provider = "openai"
+    if provider not in {"anthropic", "openai"} or not name:
+        raise ValueError("Use an anthropic:MODEL or openai:MODEL identifier.")
+    return provider, name
+
+
 def build_agent(
     case: Case,
     model: Model,
@@ -266,16 +280,16 @@ async def episode(
     client = httpx.AsyncClient(transport=AuditedTransport(provider_calls, "agent"), timeout=120)
     if test_model is not None:
         model = test_model
-    elif model_name == "gpt-6-luna":
+    elif model_identifier(model_name)[0] == "openai":
         model = OpenAIResponsesModel(
-            model_name,
+            model_identifier(model_name)[1],
             provider=OpenAIProvider(
                 openai_client=AsyncOpenAI(max_retries=0, timeout=120, http_client=cast(Any, client))
             ),
         )
     else:
         model = AnthropicModel(
-            model_name,
+            model_identifier(model_name)[1],
             provider=AnthropicProvider(
                 anthropic_client=AsyncAnthropic(max_retries=0, timeout=120, http_client=client)
             ),

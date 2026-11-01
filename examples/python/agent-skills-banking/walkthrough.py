@@ -16,7 +16,7 @@ from typing import Any
 
 from banking import DOCUMENTS, expected_database, make_case
 from hosted import Hosted, readable_skills
-from runner import episode, source_hashes, trace_events, write_json
+from runner import episode, model_identifier, source_hashes, trace_events, write_json
 
 
 def digest(value: Any) -> str:
@@ -135,7 +135,7 @@ async def run_demo(args: argparse.Namespace) -> None:
         "teacher_effort": "max",
         "teacher_teaching_output": True,
         "student_temperature": 0
-        if args.effort == "none" and args.student != "gpt-6-luna"
+        if args.effort == "none" and model_identifier(args.student)[0] == "anthropic"
         else None,
         "seed": args.seed,
         "teacher_seed": args.teacher_seed,

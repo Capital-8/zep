@@ -6,7 +6,29 @@ from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
 from pydantic_ai.models.function import FunctionModel
 
 from banking import Database, expected_database, make_case
-from runner import TEACHING_REQUEST, build_agent, episode, trace_events
+from runner import TEACHING_REQUEST, build_agent, episode, model_identifier, trace_events
+
+
+@pytest.mark.parametrize(
+    ("model_name", "expected"),
+    [
+        ("claude-haiku-4-5-20251001", ("anthropic", "claude-haiku-4-5-20251001")),
+        ("claude-opus-5-5", ("anthropic", "claude-opus-5-5")),
+        ("gpt-6-luna", ("openai", "gpt-6-luna")),
+        ("gpt-4.1-mini", ("openai", "gpt-4.1-mini")),
+        ("o3-mini", ("openai", "o3-mini")),
+        ("openai:custom-model", ("openai", "custom-model")),
+        ("anthropic:custom-model", ("anthropic", "custom-model")),
+    ],
+)
+def test_model_provider_and_name_are_selected_without_network_calls(model_name, expected):
+    assert model_identifier(model_name) == expected
+
+
+@pytest.mark.parametrize("model_name", ["unknown-model", "openai:", "other:custom-model"])
+def test_unsupported_model_identifiers_are_rejected(model_name):
+    with pytest.raises(ValueError, match="anthropic:MODEL or openai:MODEL"):
+        model_identifier(model_name)
 
 
 def scripted_model(operations, seen=None):
