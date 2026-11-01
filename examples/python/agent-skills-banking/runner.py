@@ -278,27 +278,33 @@ async def episode(
         },
     )
     client = httpx.AsyncClient(transport=AuditedTransport(provider_calls, "agent"), timeout=120)
-    if test_model is not None:
-        model = test_model
-    elif model_identifier(model_name)[0] == "openai":
-        model = OpenAIResponsesModel(
-            model_identifier(model_name)[1],
-            provider=OpenAIProvider(
-                openai_client=AsyncOpenAI(max_retries=0, timeout=120, http_client=cast(Any, client))
-            ),
-        )
-    else:
-        model = AnthropicModel(
-            model_identifier(model_name)[1],
-            provider=AnthropicProvider(
-                anthropic_client=AsyncAnthropic(max_retries=0, timeout=120, http_client=client)
-            ),
-        )
-    agent = build_agent(case, model, effort, skills, db, tool_calls)
-    write_json(path / "settings.json", agent.model_settings)
-    started = time.monotonic()
     transcript = []
     try:
+        if test_model is not None:
+            model = test_model
+        else:
+            provider, name = model_identifier(model_name)
+            if provider == "openai":
+                model = OpenAIResponsesModel(
+                    name,
+                    provider=OpenAIProvider(
+                        openai_client=AsyncOpenAI(
+                            max_retries=0, timeout=120, http_client=cast(Any, client)
+                        )
+                    ),
+                )
+            else:
+                model = AnthropicModel(
+                    name,
+                    provider=AnthropicProvider(
+                        anthropic_client=AsyncAnthropic(
+                            max_retries=0, timeout=120, http_client=client
+                        )
+                    ),
+                )
+        agent = build_agent(case, model, effort, skills, db, tool_calls)
+        write_json(path / "settings.json", agent.model_settings)
+        started = time.monotonic()
         async with asyncio.timeout(900):
             with capture_run_messages() as transcript:
                 result = await agent.run(

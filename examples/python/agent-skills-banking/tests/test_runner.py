@@ -31,6 +31,36 @@ def test_unsupported_model_identifiers_are_rejected(model_name):
         model_identifier(model_name)
 
 
+@pytest.mark.parametrize("failure", ["invalid-model", "provider-setup"])
+def test_model_setup_failures_save_artifacts_and_close_the_client(tmp_path, monkeypatch, failure):
+    import httpx
+
+    import runner
+
+    clients = []
+
+    class TrackedClient(httpx.AsyncClient):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            clients.append(self)
+
+    def fail_provider(**kwargs):
+        raise RuntimeError("The provider setup failed.")
+
+    monkeypatch.setattr(runner.httpx, "AsyncClient", TrackedClient)
+    monkeypatch.setattr(runner, "AsyncAnthropic", fail_provider)
+    model = "unknown-model" if failure == "invalid-model" else "claude-test"
+    path = tmp_path / failure
+    with pytest.raises((ValueError, RuntimeError)):
+        asyncio.run(episode(path, make_case(0), model_name=model))
+    assert len(clients) == 1 and clients[0].is_closed
+    assert (path / "failure.json").exists()
+    assert json.loads((path / "provider-calls.json").read_text()) == []
+    assert json.loads((path / "messages.json").read_text()) == []
+    assert json.loads((path / "database.json").read_text()) == {"credits": [], "reports": []}
+    assert not (path / "result.json").exists()
+
+
 def scripted_model(operations, seen=None):
     iterator = iter(operations)
 
