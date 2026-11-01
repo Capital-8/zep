@@ -19,7 +19,6 @@ from hosted import Hosted, readable_skills
 from runner import (
     DEFAULT_STUDENT_MODEL,
     episode,
-    model_identifier,
     source_hashes,
     trace_events,
     write_json,
@@ -141,9 +140,7 @@ async def run_demo(args: argparse.Namespace) -> None:
         "teacher": args.teacher,
         "teacher_effort": args.teacher_effort,
         "teacher_teaching_output": True,
-        "student_temperature": 0
-        if args.effort == "none" and model_identifier(args.student)[0] == "anthropic"
-        else None,
+        "student_temperature": None,
         "seed": args.seed,
         "teacher_seed": args.teacher_seed,
         "screening_seeds": [0, 1, 2, 3],

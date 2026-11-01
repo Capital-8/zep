@@ -122,8 +122,6 @@ def build_agent(
         timeout=120,
         parallel_tool_calls=False,
     )
-    if effort == "none":
-        anthropic_settings["temperature"] = 0
     agent = Agent(
         model,
         instructions=SYSTEM.format(catalog=json.dumps(catalog)),

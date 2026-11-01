@@ -177,13 +177,13 @@ def test_invalid_money_is_visible_and_does_not_mutate(tmp_path):
     assert json.loads((path / "database.json").read_text()) == {"credits": [], "reports": []}
 
 
-def test_disabled_thinking_has_explicit_zero_temperature():
+def test_disabled_thinking_omits_unsupported_sampling_parameters():
     case = make_case(0)
     model = scripted_model([])
     student = build_agent(case, model, "none", [], Database(), [])
     teacher = build_agent(case, model, "max", [], Database(), [])
     assert isinstance(student.model_settings, dict)
-    assert student.model_settings.get("temperature") == 0
+    assert "temperature" not in student.model_settings
     assert student.model_settings.get("anthropic_thinking") == {"type": "disabled"}
     assert isinstance(teacher.model_settings, dict)
     assert "temperature" not in teacher.model_settings

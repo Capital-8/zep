@@ -113,7 +113,8 @@ The teacher must pass before a successful Trace is uploaded.
 The student must read a retrieved Skill for its Skill-assisted run to be valid.
 The generated Skill is not edited or replaced with a local procedure.
 
-Haiku uses disabled thinking and temperature 0 in both student configurations.
+Haiku uses disabled thinking in both student configurations. The runner does not
+send a temperature setting because Haiku 5.5 does not accept sampling parameters.
 Both configurations receive the same task, policies, tools, and limits.
 The live Skill catalog is the only treatment difference.
 Opus uses maximum effort and the provider-default temperature.
