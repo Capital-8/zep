@@ -8,8 +8,16 @@ Runnable examples for the public Zep Cloud SDKs.
 | TypeScript | [`typescript`](./typescript) | [`@getzep/zep-cloud`](https://www.npmjs.com/package/@getzep/zep-cloud) v4 |
 | Go | [`go`](./go) | [`github.com/getzep/zep-go/v4`](https://pkg.go.dev/github.com/getzep/zep-go/v4) |
 
-Every example imports the published SDK package, so none of them require a local
-SDK checkout.
+The examples use published SDK packages or the public HTTP API. They do not require
+a local SDK checkout.
+
+## Agent Skills
+
+The [Python banking example](./python/agent-skills-banking) uses PydanticAI and
+Pydantic models. It runs a student without a Skill, uploads a passing teacher Trace
+to the public Zep service, and runs the student with the newly compiled Skill.
+The example uses invented banking records and policies. Its README includes setup,
+API key requirements, run commands, and recovery instructions.
 
 ## Toolchain
 

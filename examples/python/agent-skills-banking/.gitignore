@@ -1,0 +1,5 @@
+.env
+.env.*
+runs/
+.ruff_cache/
+!uv.lock
