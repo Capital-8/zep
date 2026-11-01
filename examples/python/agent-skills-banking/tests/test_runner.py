@@ -183,7 +183,7 @@ def test_disabled_thinking_omits_unsupported_sampling_parameters():
     student = build_agent(case, model, "none", [], Database(), [])
     teacher = build_agent(case, model, "max", [], Database(), [])
     assert isinstance(student.model_settings, dict)
-    assert "temperature" not in student.model_settings
+    assert not {"temperature", "top_p", "top_k"}.intersection(student.model_settings)
     assert student.model_settings.get("anthropic_thinking") == {"type": "disabled"}
     assert isinstance(teacher.model_settings, dict)
     assert "temperature" not in teacher.model_settings

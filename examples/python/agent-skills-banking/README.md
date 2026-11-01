@@ -229,7 +229,7 @@ The summary's strict `accepted` flag requires every baseline to fail and every
 Skill-assisted episode to pass. The flag is specific to this demonstration goal.
 
 Repeated runs of one selected case do not establish performance on unseen tasks.
-Temperature 0 does not guarantee deterministic outputs or independent samples.
+Model responses can vary between runs, even with disabled thinking.
 The conditional lower bound in the summary assumes independence; the example does
 not establish that assumption. Fresh-case checks are exploratory and can include
 baseline successes. One successful learning loop does not guarantee future results.
